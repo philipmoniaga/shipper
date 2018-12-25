@@ -7,7 +7,7 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -23,14 +23,17 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	shipper "github.com/bookingcom/shipper/pkg/apis/shipper/v1alpha1"
-	"github.com/bookingcom/shipper/pkg/chart"
+	"github.com/bookingcom/shipper/pkg/chart/repo"
 	shipperfake "github.com/bookingcom/shipper/pkg/client/clientset/versioned/fake"
 	shipperinformers "github.com/bookingcom/shipper/pkg/client/informers/externalversions"
 	"github.com/bookingcom/shipper/pkg/clusterclientstore"
 	shippertesting "github.com/bookingcom/shipper/pkg/testing"
 )
 
-var chartFetchFunc = chart.FetchRemoteWithCache("testdata/chart-cache", chart.DefaultCacheLimit)
+//var chartFetchFunc = chart.FetchRemoteWithCache("testdata/chart-cache", chart.DefaultCacheLimit)
+var testChartRepo = repo.NewCatalog(func(_ string) (repo.Cache, error) {
+	return repo.NewFilesystemCache("testdata/chart-cache", 5*1024*1024)
+})
 
 // FakeClientProvider implements clusterclientstore.ClientProvider.
 type FakeClientProvider struct {
@@ -203,7 +206,7 @@ func newController(
 	fakeRecorder record.EventRecorder,
 ) *Controller {
 	c := NewController(
-		shipperclientset, shipperInformerFactory, fakeClientProvider, fakeDynamicClientBuilder, chartFetchFunc,
+		shipperclientset, shipperInformerFactory, fakeClientProvider, fakeDynamicClientBuilder, testChartRepo,
 		fakeRecorder,
 	)
 
@@ -223,10 +226,10 @@ func newController(
 }
 
 func newInstaller(release *shipper.Release, it *shipper.InstallationTarget) *Installer {
-	return NewInstaller(chartFetchFunc, release, it)
+	return NewInstaller(testChartRepo, release, it)
 }
 
-func buildRelease(name, namespace, generation, uid, appName string) *shipper.Release {
+func buildRelease(repoURL, name, namespace, generation, uid, appName string) *shipper.Release {
 	return &shipper.Release{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      name,
@@ -245,7 +248,7 @@ func buildRelease(name, namespace, generation, uid, appName string) *shipper.Rel
 				Chart: shipper.Chart{
 					Name:    "reviews-api",
 					Version: "0.0.1",
-					RepoURL: "localhost",
+					RepoURL: repoURL,
 				},
 			},
 		},

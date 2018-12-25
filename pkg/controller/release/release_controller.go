@@ -17,6 +17,7 @@ import (
 
 	shipper "github.com/bookingcom/shipper/pkg/apis/shipper/v1alpha1"
 	"github.com/bookingcom/shipper/pkg/chart"
+	"github.com/bookingcom/shipper/pkg/chart/repo"
 	shipperclient "github.com/bookingcom/shipper/pkg/client/clientset/versioned"
 	shipperinformers "github.com/bookingcom/shipper/pkg/client/informers/externalversions"
 	shipperlisters "github.com/bookingcom/shipper/pkg/client/listers/shipper/v1alpha1"
@@ -42,9 +43,9 @@ const (
 //
 // Release Controller has 2 primary workqueues: releases and applications.
 type Controller struct {
-	clientset      shipperclient.Interface
-	chartFetchFunc chart.FetchFunc
-	recorder       record.EventRecorder
+	clientset   shipperclient.Interface
+	repoCatalog *repo.Catalog
+	recorder    record.EventRecorder
 
 	applicationLister  shipperlisters.ApplicationLister
 	applicationsSynced cache.InformerSynced
@@ -84,7 +85,7 @@ type ReleaseStrategyStateTransition struct {
 func NewController(
 	clientset shipperclient.Interface,
 	informerFactory shipperinformers.SharedInformerFactory,
-	chartFetchFunc chart.FetchFunc,
+	repoCatalog *repo.Catalog,
 	recorder record.EventRecorder,
 ) *Controller {
 
@@ -98,9 +99,9 @@ func NewController(
 	glog.Info("Building a release controller")
 
 	controller := &Controller{
-		clientset:      clientset,
-		chartFetchFunc: chartFetchFunc,
-		recorder:       recorder,
+		clientset:   clientset,
+		repoCatalog: repoCatalog,
+		recorder:    recorder,
 
 		applicationLister:  applicationInformer.Lister(),
 		applicationsSynced: applicationInformer.Informer().HasSynced,

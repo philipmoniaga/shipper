@@ -33,7 +33,10 @@ type Catalog struct {
 }
 
 func NewCatalog(fabric CacheFabric) *Catalog {
-	return &Catalog{fabric: fabric}
+	return &Catalog{
+		repos:  make(map[string]*Repo),
+		fabric: fabric,
+	}
 }
 
 func (c *Catalog) CreateRepoIfNotExist(repoURL string) (*Repo, error) {
@@ -193,6 +196,7 @@ func fetch(url string) ([]byte, error) {
 }
 
 func loadIndex(data []byte) (*repo.IndexFile, error) {
+	fmt.Println(string(data))
 	if len(data) == 0 {
 		return nil, fmt.Errorf("empty content")
 	}
