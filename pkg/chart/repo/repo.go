@@ -15,7 +15,11 @@ import (
 	"time"
 
 	"github.com/bookingcom/shipper/pkg/metrics/instrumentedclient"
-	//yaml "gopkg.in/yaml.v2"
+	// Importing this yaml package is a very crucial point:
+	// the "classical" yaml.v2 does not understand json annotations
+	// in structure definitions and therefore always parses empty
+	// index structures. This version is patched to understand json
+	// annotations and works fine.
 	yaml "github.com/ghodss/yaml"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -135,6 +139,9 @@ func (r *Repo) ResolveVersion(chart, version string) (*repo.ChartVersion, error)
 }
 
 func (r *Repo) Fetch(cv *repo.ChartVersion) (*chart.Chart, error) {
+	if cv == nil {
+		return nil, fmt.Errorf("ChartVersion is nil, can not proceed")
+	}
 	if len(cv.URLs) == 0 {
 		return nil, fmt.Errorf("chart %q has no downloadable URLs", cv.Name)
 	}

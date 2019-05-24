@@ -433,7 +433,7 @@ func startReleaseController(cfg *cfg) (bool, error) {
 		buildShipperClient(cfg.restCfg, release.AgentName, cfg.restTimeout),
 		cfg.shipperInformerFactory,
 		cfg.repoCatalog,
-		cfg.recorder(schedulecontroller.AgentName),
+		cfg.recorder(release.AgentName),
 	)
 
 	cfg.wg.Add(1)
