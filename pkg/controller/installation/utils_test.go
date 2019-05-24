@@ -30,9 +30,8 @@ import (
 	shippertesting "github.com/bookingcom/shipper/pkg/testing"
 )
 
-//var chartFetchFunc = chart.FetchRemoteWithCache("testdata/chart-cache", chart.DefaultCacheLimit)
-var testChartRepo = repo.NewCatalog(func(_ string) (repo.Cache, error) {
-	return repo.NewFilesystemCache("testdata/chart-cache", 5*1024*1024)
+var testChartRepo = repo.NewCatalog(func(string) (repo.Cache, error) {
+	return repo.NewFilesystemCache(repoPwd, 5*1024*1024)
 })
 
 // FakeClientProvider implements clusterclientstore.ClientProvider.
@@ -229,7 +228,7 @@ func newInstaller(release *shipper.Release, it *shipper.InstallationTarget) *Ins
 	return NewInstaller(testChartRepo, release, it)
 }
 
-func buildRelease(repoURL, name, namespace, generation, uid, appName string) *shipper.Release {
+func buildRelease(repoURL, name, namespace, version, generation, uid, appName string) *shipper.Release {
 	return &shipper.Release{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      name,
@@ -237,7 +236,7 @@ func buildRelease(repoURL, name, namespace, generation, uid, appName string) *sh
 			UID:       types.UID(uid),
 			Labels: map[string]string{
 				shipper.AppLabel:     appName,
-				shipper.ReleaseLabel: name,
+				shipper.ReleaseLabel: version,
 			},
 			Annotations: map[string]string{
 				shipper.ReleaseGenerationAnnotation: generation,
@@ -246,8 +245,8 @@ func buildRelease(repoURL, name, namespace, generation, uid, appName string) *sh
 		Spec: shipper.ReleaseSpec{
 			Environment: shipper.ReleaseEnvironment{
 				Chart: shipper.Chart{
-					Name:    "reviews-api",
-					Version: "0.0.1",
+					Name:    appName,
+					Version: version,
 					RepoURL: repoURL,
 				},
 			},

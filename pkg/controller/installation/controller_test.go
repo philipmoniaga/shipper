@@ -26,8 +26,8 @@ func TestInstallIncumbent(t *testing.T) {
 	cluster := buildCluster("minikube-a")
 	appName := "reviews-api"
 	testNs := "reviews-api"
-	incumbentRel := buildRelease(repoURL, "0.0.1", testNs, "0", "deadbeef", appName)
-	contenderRel := buildRelease(repoURL, "0.0.2", testNs, "1", "beefdead", appName)
+	incumbentRel := buildRelease(repoUrl, "0.0.1", testNs, "0.0.1", "0", "deadbeef", appName)
+	contenderRel := buildRelease(repoUrl, "0.0.2", testNs, "0.0.2", "1", "beefdead", appName)
 	incumbentIt := buildInstallationTarget(incumbentRel, testNs, appName, []string{cluster.Name})
 
 	shipperObjects := []runtime.Object{cluster, contenderRel, incumbentRel, incumbentIt}
@@ -58,7 +58,7 @@ func TestInstallOneCluster(t *testing.T) {
 	appName := "reviews-api"
 	testNs := "reviews-api"
 	app := buildApplication(appName, appName)
-	release := buildRelease(repoURL, "0.0.1", testNs, "0", "deadbeef", app.Name)
+	release := buildRelease(repoUrl, "0.0.1", testNs, "0.0.1", "0", "deadbeef", app.Name)
 	installationTarget := buildInstallationTarget(release, testNs, appName, []string{cluster.Name})
 
 	clientsPerCluster, shipperclientset, fakeDynamicClientBuilder, shipperInformerFactory :=
@@ -138,7 +138,7 @@ func TestInstallMultipleClusters(t *testing.T) {
 	appName := "reviews-api"
 	testNs := "reviews-api"
 	app := buildApplication(appName, testNs)
-	release := buildRelease(repoURL, "0.0.1", testNs, "0", "deadbeef", appName)
+	release := buildRelease(repoUrl, "0.0.1", testNs, "0.0.1", "0", "deadbeef", appName)
 	installationTarget := buildInstallationTarget(release, testNs, appName, []string{clusterA.Name, clusterB.Name})
 
 	clientsPerCluster, shipperclientset, fakeDynamicClientBuilder, shipperInformerFactory :=
@@ -289,7 +289,7 @@ func TestClientError(t *testing.T) {
 	appName := "reviews-api"
 	testNs := "reviews-api"
 	app := buildApplication(appName, testNs)
-	release := buildRelease(repoURL, "0.0.1", testNs, "0", "deadbeef", appName)
+	release := buildRelease(repoUrl, "0.0.1", testNs, "0.0.1", "0", "deadbeef", appName)
 	installationTarget := buildInstallationTarget(release, testNs, appName, []string{cluster.Name})
 
 	clientsPerCluster, shipperclientset, fakeDynamicClientBuilder, shipperInformerFactory :=
@@ -373,7 +373,7 @@ func TestTargetClusterMissesGVK(t *testing.T) {
 	appName := "reviews-api"
 	testNs := "reviews-api"
 	app := buildApplication(appName, testNs)
-	release := buildRelease(repoURL, "0.0.1", testNs, "0", "deadbeef", appName)
+	release := buildRelease(repoUrl, "0.0.1", testNs, "0.0.1", "0", "deadbeef", appName)
 	installationTarget := buildInstallationTarget(release, testNs, appName, []string{cluster.Name})
 
 	clientsPerCluster, shipperclientset, fakeDynamicClientBuilder, shipperInformerFactory :=
@@ -453,7 +453,7 @@ func TestManagementServerMissesCluster(t *testing.T) {
 	appName := "reviews-api"
 	testNs := "reviews-api"
 	app := buildApplication(appName, testNs)
-	release := buildRelease(repoURL, "0.0.1", testNs, "0", "deadbeef", appName)
+	release := buildRelease(repoUrl, "0.0.1", testNs, "0.0.1", "0", "deadbeef", appName)
 	installationTarget := buildInstallationTarget(release, testNs, appName, []string{"minikube-a"})
 
 	clientsPerCluster, shipperclientset, fakeDynamicClientBuilder, shipperInformerFactory :=

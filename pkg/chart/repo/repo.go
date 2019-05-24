@@ -14,7 +14,8 @@ import (
 	"sync"
 
 	"github.com/bookingcom/shipper/pkg/metrics/instrumentedclient"
-	yaml "gopkg.in/yaml.v2"
+	//yaml "gopkg.in/yaml.v2"
+	yaml "github.com/ghodss/yaml"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/repo"
@@ -196,7 +197,6 @@ func fetch(url string) ([]byte, error) {
 }
 
 func loadIndex(data []byte) (*repo.IndexFile, error) {
-	fmt.Println(string(data))
 	if len(data) == 0 {
 		return nil, fmt.Errorf("empty content")
 	}

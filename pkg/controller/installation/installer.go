@@ -57,7 +57,6 @@ func NewInstaller(
 func (i *Installer) renderManifests(_ *shipper.Cluster) ([]string, error) {
 	rel := i.Release
 	chartMeta := rel.Spec.Environment.Chart
-	fmt.Printf("%#v\n", chartMeta)
 	repo, err := i.repoCatalog.CreateRepoIfNotExist(chartMeta.RepoURL)
 	if err != nil {
 		return nil, RenderManifestError(err)
@@ -532,7 +531,6 @@ func (i *Installer) installRelease(
 	restConfig *rest.Config,
 	dynamicClientBuilder DynamicClientBuilderFunc,
 ) error {
-
 	renderedManifests, err := i.renderManifests(cluster)
 	if err != nil {
 		return err
