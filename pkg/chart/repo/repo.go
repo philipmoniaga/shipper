@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/bookingcom/shipper/pkg/metrics/instrumentedclient"
 	//yaml "gopkg.in/yaml.v2"
@@ -56,7 +57,8 @@ func (c *Catalog) CreateRepoIfNotExist(repoURL string) (*Repo, error) {
 			return nil, fmt.Errorf("failed to create cache: %v", err)
 		}
 
-		repo = &Repo{url: repoURL, cache: cache}
+		repo = NewRepo(repoURL, cache)
+
 		c.repos[name] = repo
 	}
 
@@ -64,15 +66,30 @@ func (c *Catalog) CreateRepoIfNotExist(repoURL string) (*Repo, error) {
 }
 
 type Repo struct {
-	url   string
-	cache Cache
-	sync.Mutex
+	url      string
+	cache    Cache
+	syncChan chan struct{}
 }
 
+func NewRepo(repoURL string, cache Cache) *Repo {
+	return &Repo{url: repoURL, cache: cache, syncChan: make(chan struct{}, 1)}
+}
+
+const (
+	RefreshIndexTimeout = 5000
+)
+
 func (r *Repo) RefreshIndex() error {
-	r.Lock()
-	defer r.Unlock()
-	// relying on instrumentedclient's HTTP client to not stuck forever
+
+	// This bit acquires a mutex with a timeout.
+	// It uses a buffered 1-element channel as a token sentinel.
+	select {
+	case <-time.After(RefreshIndexTimeout * time.Millisecond):
+		return fmt.Errorf("Timed out to refresh index on repo %s", r.url)
+	case r.syncChan <- (struct{}{}):
+	}
+	// Defer unlock the mutex
+	defer func() { <-r.syncChan }()
 
 	parsed, _ := url.Parse(r.url) // URL is validated before
 	parsed.Path = path.Join(parsed.Path, "index.yaml")
@@ -106,13 +123,15 @@ func (r *Repo) ResolveVersion(chart, version string) (*repo.ChartVersion, error)
 	}
 
 	cv, err := index.Get(chart, version)
-	if strings.Contains(err.Error(), "constraint Parser Error") {
-		return nil, ErrInvalidConstraint
-	} else if strings.Contains(err.Error(), "improper constraint") {
-		return nil, ErrInvalidConstraint
+	if err != nil {
+		if strings.Contains(err.Error(), "constraint Parser Error") {
+			return nil, ErrInvalidConstraint
+		} else if strings.Contains(err.Error(), "improper constraint") {
+			return nil, ErrInvalidConstraint
+		}
 	}
 
-	return cv, err
+	return cv, nil
 }
 
 func (r *Repo) Fetch(cv *repo.ChartVersion) (*chart.Chart, error) {

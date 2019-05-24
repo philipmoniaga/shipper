@@ -15,6 +15,7 @@ import (
 	"k8s.io/helm/pkg/repo/repotest"
 
 	shipper "github.com/bookingcom/shipper/pkg/apis/shipper/v1alpha1"
+	"github.com/bookingcom/shipper/pkg/chart/repo"
 	shipperfake "github.com/bookingcom/shipper/pkg/client/clientset/versioned/fake"
 	shipperinformers "github.com/bookingcom/shipper/pkg/client/informers/externalversions"
 	shippertesting "github.com/bookingcom/shipper/pkg/testing"
@@ -29,6 +30,10 @@ const (
 func init() {
 	apputil.ConditionsShouldDiscardTimestamps = true
 }
+
+var testChartRepo = repo.NewCatalog(func(string) (repo.Cache, error) {
+	return repo.NewFilesystemCache(repoPwd, 5*1024*1024)
+})
 
 // Private method, but other tests make use of it.
 
@@ -56,7 +61,7 @@ func TestHashReleaseEnv(t *testing.T) {
 func TestCreateFirstRelease(t *testing.T) {
 	f := newFixture(t)
 	app := newApplication(testAppName)
-	app.Spec.Template.Chart.RepoURL = "127.0.0.1"
+	app.Spec.Template.Chart.RepoURL = repoUrl
 
 	envHash := hashReleaseEnvironment(app.Spec.Template)
 	expectedRelName := fmt.Sprintf("%s-%s-0", testAppName, envHash)
@@ -89,7 +94,7 @@ func TestCreateFirstRelease(t *testing.T) {
 	// because the testing client does not update listers after Create actions.
 
 	expectedRelease := newRelease(expectedRelName, app)
-	expectedRelease.Spec.Environment.Chart.RepoURL = "127.0.0.1"
+	expectedRelease.Spec.Environment.Chart.RepoURL = repoUrl
 	expectedRelease.Labels[shipper.ReleaseEnvironmentHashLabel] = envHash
 	expectedRelease.Annotations[shipper.ReleaseTemplateIterationAnnotation] = "0"
 	expectedRelease.Annotations[shipper.ReleaseGenerationAnnotation] = "0"
@@ -650,7 +655,7 @@ func newApplication(name string) *shipper.Application {
 				Chart: shipper.Chart{
 					Name:    "simple",
 					Version: "0.0.1",
-					RepoURL: "http://127.0.0.1:8879/charts",
+					RepoURL: repoUrl,
 				},
 				ClusterRequirements: shipper.ClusterRequirements{},
 				Values:              &shipper.ChartValues{},
@@ -677,7 +682,7 @@ func (f *fixture) newController() (*Controller, shipperinformers.SharedInformerF
 	const noResyncPeriod time.Duration = 0
 	shipperInformerFactory := shipperinformers.NewSharedInformerFactory(f.client, noResyncPeriod)
 
-	c := NewController(f.client, shipperInformerFactory, record.NewFakeRecorder(42))
+	c := NewController(f.client, shipperInformerFactory, testChartRepo, record.NewFakeRecorder(42))
 
 	return c, shipperInformerFactory
 }

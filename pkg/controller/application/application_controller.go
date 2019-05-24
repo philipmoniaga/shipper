@@ -75,7 +75,8 @@ func NewController(
 		relLister: relInformer.Lister(),
 		relSynced: relInformer.Informer().HasSynced,
 
-		recorder: recorder,
+		repoCatalog: repoCatalog,
+		recorder:    recorder,
 	}
 
 	appInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
