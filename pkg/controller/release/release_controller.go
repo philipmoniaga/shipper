@@ -16,7 +16,6 @@ import (
 	"k8s.io/client-go/util/workqueue"
 
 	shipper "github.com/bookingcom/shipper/pkg/apis/shipper/v1alpha1"
-	"github.com/bookingcom/shipper/pkg/chart"
 	"github.com/bookingcom/shipper/pkg/chart/repo"
 	shipperclient "github.com/bookingcom/shipper/pkg/client/clientset/versioned"
 	shipperinformers "github.com/bookingcom/shipper/pkg/client/informers/externalversions"
@@ -289,7 +288,7 @@ func (c *Controller) syncOneReleaseHandler(key string) bool {
 		c.installationTargetLister,
 		c.capacityTargetLister,
 		c.trafficTargetLister,
-		c.chartFetchFunc,
+		c.repoCatalog,
 		c.recorder,
 	)
 

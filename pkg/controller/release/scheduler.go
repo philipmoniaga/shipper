@@ -16,6 +16,7 @@ import (
 
 	shipper "github.com/bookingcom/shipper/pkg/apis/shipper/v1alpha1"
 	shipperchart "github.com/bookingcom/shipper/pkg/chart"
+	"github.com/bookingcom/shipper/pkg/chart/repo"
 	shipperclientset "github.com/bookingcom/shipper/pkg/client/clientset/versioned"
 	listers "github.com/bookingcom/shipper/pkg/client/listers/shipper/v1alpha1"
 	"github.com/bookingcom/shipper/pkg/controller"
@@ -30,8 +31,8 @@ type Scheduler struct {
 	trafficTargetLister      listers.TrafficTargetLister
 	capacityTargetLister     listers.CapacityTargetLister
 
-	fetchChart shipperchart.FetchFunc
-	recorder   record.EventRecorder
+	repoCatalog *repo.Catalog
+	recorder    record.EventRecorder
 }
 
 func NewScheduler(
@@ -40,7 +41,7 @@ func NewScheduler(
 	installationTargerLister listers.InstallationTargetLister,
 	capacityTargetLister listers.CapacityTargetLister,
 	trafficTargetLister listers.TrafficTargetLister,
-	fetchChart shipperchart.FetchFunc,
+	repoCatalog *repo.Catalog,
 	recorder record.EventRecorder,
 ) *Scheduler {
 	return &Scheduler{
@@ -51,8 +52,8 @@ func NewScheduler(
 		trafficTargetLister:      trafficTargetLister,
 		capacityTargetLister:     capacityTargetLister,
 
-		fetchChart: fetchChart,
-		recorder:   recorder,
+		repoCatalog: repoCatalog,
+		recorder:    recorder,
 	}
 }
 
@@ -582,6 +583,20 @@ func setReleaseClusters(rel *shipper.Release, clusters []*shipper.Cluster) {
 	}
 	sort.Strings(clusterNames)
 	rel.Annotations[shipper.ReleaseClustersAnnotation] = strings.Join(clusterNames, ",")
+}
+
+func (s *Scheduler) fetchChart(chartspec shipper.Chart) (*helmchart.Chart, error) {
+	repo, err := s.repoCatalog.CreateRepoIfNotExist(chartspec.RepoURL)
+	if err != nil {
+		return nil, err
+	}
+
+	chart, err := repo.FetchIfNotCached(chartspec.Name, chartspec.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	return chart, nil
 }
 
 func (s *Scheduler) fetchChartAndExtractReplicaCount(rel *shipper.Release) (int32, error) {

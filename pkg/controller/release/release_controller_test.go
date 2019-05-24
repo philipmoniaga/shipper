@@ -20,7 +20,7 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	shipper "github.com/bookingcom/shipper/pkg/apis/shipper/v1alpha1"
-	"github.com/bookingcom/shipper/pkg/chart"
+	"github.com/bookingcom/shipper/pkg/chart/repo"
 	shipperfake "github.com/bookingcom/shipper/pkg/client/clientset/versioned/fake"
 	shipperinformers "github.com/bookingcom/shipper/pkg/client/informers/externalversions"
 	"github.com/bookingcom/shipper/pkg/conditions"
@@ -235,11 +235,15 @@ func (f *fixture) run() {
 	shippertesting.CheckEvents(f.expectedEvents, f.receivedEvents, f.t)
 }
 
+var testChartRepo = repo.NewCatalog(func(string) (repo.Cache, error) {
+	return repo.NewFilesystemCache(repoPwd, 5*1024*1024)
+})
+
 func (f *fixture) newController() *Controller {
 	return NewController(
 		f.clientset,
 		f.informerFactory,
-		chart.FetchRemote(),
+		testChartRepo,
 		f.recorder,
 	)
 }
@@ -334,7 +338,7 @@ func (f *fixture) buildIncumbent(namespace string, relName string, replicaCount 
 				Chart: shipper.Chart{
 					Name:    "simple",
 					Version: "0.0.1",
-					RepoURL: chartRepoURL,
+					RepoURL: repoUrl,
 				},
 				ClusterRequirements: shipper.ClusterRequirements{
 					Regions: []shipper.RegionRequirement{{Name: shippertesting.TestRegion}},
@@ -519,7 +523,7 @@ func (f *fixture) buildContender(namespace string, relName string, replicaCount 
 				Chart: shipper.Chart{
 					Name:    "simple",
 					Version: "0.0.1",
-					RepoURL: chartRepoURL,
+					RepoURL: repoUrl,
 				},
 				ClusterRequirements: shipper.ClusterRequirements{
 					Regions: []shipper.RegionRequirement{{Name: shippertesting.TestRegion}},

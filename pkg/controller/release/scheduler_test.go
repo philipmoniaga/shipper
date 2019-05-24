@@ -15,7 +15,6 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	shipper "github.com/bookingcom/shipper/pkg/apis/shipper/v1alpha1"
-	shipperchart "github.com/bookingcom/shipper/pkg/chart"
 	shipperfake "github.com/bookingcom/shipper/pkg/client/clientset/versioned/fake"
 	shipperinformers "github.com/bookingcom/shipper/pkg/client/informers/externalversions"
 	shippertesting "github.com/bookingcom/shipper/pkg/testing"
@@ -53,7 +52,7 @@ func buildRelease() *shipper.Release {
 				Chart: shipper.Chart{
 					Name:    "simple",
 					Version: "0.0.1",
-					RepoURL: chartRepoURL,
+					RepoURL: repoUrl,
 				},
 				ClusterRequirements: shipper.ClusterRequirements{
 					Regions: []shipper.RegionRequirement{{Name: shippertesting.TestRegion}},
@@ -178,7 +177,7 @@ func newScheduler(
 		installationTargetLister,
 		capacityTargetLister,
 		trafficTargetLister,
-		shipperchart.FetchRemote(),
+		testChartRepo,
 		record.NewFakeRecorder(42))
 
 	stopCh := make(chan struct{})
