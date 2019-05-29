@@ -72,6 +72,7 @@ func (c *Controller) resolveChartVersion(rel *shipper.Release) error {
 	}
 
 	if err := repo.RefreshIndex(); err != nil {
+		glog.Warningf("Failed to refresh repo[%s] index: %s", chart.RepoURL, err)
 		// TODO add condition
 	}
 

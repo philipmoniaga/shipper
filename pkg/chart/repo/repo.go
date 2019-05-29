@@ -89,7 +89,7 @@ func (r *Repo) RefreshIndex() error {
 	// It uses a buffered 1-element channel as a token sentinel.
 	select {
 	case <-time.After(RefreshIndexTimeout * time.Millisecond):
-		return fmt.Errorf("Timed out to refresh index on repo %s", r.url)
+		return fmt.Errorf("timed out to refresh index on repo %s", r.url)
 	case r.syncChan <- (struct{}{}):
 	}
 	// Defer unlock the mutex
