@@ -11,63 +11,25 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/bookingcom/shipper/pkg/metrics/instrumentedclient"
 	// Importing this yaml package is a very crucial point:
 	// the "classical" yaml.v2 does not understand json annotations
 	// in structure definitions and therefore always parses empty
 	// index structures. This version is patched to understand json
 	// annotations and works fine.
 	yaml "github.com/ghodss/yaml"
+
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/repo"
+
+	"github.com/bookingcom/shipper/pkg/metrics/instrumentedclient"
 )
 
 var (
 	ErrInvalidConstraint = errors.New("invalid constraint")
 )
-
-type CacheFabric func(name string) (Cache, error)
-
-type Catalog struct {
-	fabric CacheFabric
-	repos  map[string]*Repo
-	sync.Mutex
-}
-
-func NewCatalog(fabric CacheFabric) *Catalog {
-	return &Catalog{
-		repos:  make(map[string]*Repo),
-		fabric: fabric,
-	}
-}
-
-func (c *Catalog) CreateRepoIfNotExist(repoURL string) (*Repo, error) {
-	if _, err := url.Parse(repoURL); err != nil {
-		return nil, fmt.Errorf("invalid URL: %v", err)
-	}
-
-	c.Lock()
-	defer c.Unlock()
-
-	name := url2name(repoURL)
-	repo, ok := c.repos[name]
-	if !ok {
-		cache, err := c.fabric(name)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create cache: %v", err)
-		}
-
-		repo = NewRepo(repoURL, cache)
-
-		c.repos[name] = repo
-	}
-
-	return repo, nil
-}
 
 type Repo struct {
 	url      string
@@ -84,7 +46,6 @@ const (
 )
 
 func (r *Repo) RefreshIndex() error {
-
 	// This bit acquires a mutex with a timeout.
 	// It uses a buffered 1-element channel as a token sentinel.
 	select {
@@ -95,7 +56,10 @@ func (r *Repo) RefreshIndex() error {
 	// Defer unlock the mutex
 	defer func() { <-r.syncChan }()
 
-	parsed, _ := url.Parse(r.url) // URL is validated before
+	parsed, err := url.ParseRequestURI(r.url)
+	if err != nil {
+		return fmt.Errorf("failed to parse repo URL: %v", err)
+	}
 	parsed.Path = path.Join(parsed.Path, "index.yaml")
 	indexURL := parsed.String()
 
@@ -140,7 +104,7 @@ func (r *Repo) ResolveVersion(chart, version string) (*repo.ChartVersion, error)
 
 func (r *Repo) Fetch(cv *repo.ChartVersion) (*chart.Chart, error) {
 	if cv == nil {
-		return nil, fmt.Errorf("ChartVersion is nil, can not proceed")
+		return nil, fmt.Errorf("chart version is nil, can not proceed")
 	}
 	if len(cv.URLs) == 0 {
 		return nil, fmt.Errorf("chart %q has no downloadable URLs", cv.Name)

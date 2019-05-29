@@ -68,11 +68,11 @@ func (c *Controller) resolveChartVersion(rel *shipper.Release) error {
 	chart := rel.Spec.Environment.Chart
 	repo, err := c.repoCatalog.CreateRepoIfNotExist(chart.RepoURL)
 	if err != nil {
-		return fmt.Errorf("failed to create repo object: %v", err)
+		return fmt.Errorf("failed to create repo[%s] object: %s", chart.RepoURL, err)
 	}
 
 	if err := repo.RefreshIndex(); err != nil {
-		glog.Warningf("Failed to refresh repo[%s] index: %s", chart.RepoURL, err)
+		glog.Warningf("failed to refresh repo[%s] index: %s", chart.RepoURL, err)
 		// TODO add condition
 	}
 
