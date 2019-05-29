@@ -968,6 +968,7 @@
     "k8s.io/helm/pkg/chartutil",
     "k8s.io/helm/pkg/engine",
     "k8s.io/helm/pkg/proto/hapi/chart",
+    "k8s.io/helm/pkg/repo",
     "k8s.io/helm/pkg/repo/repotest",
     "k8s.io/helm/pkg/timeconv",
   ]
