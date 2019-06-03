@@ -17,8 +17,9 @@ var _ Cache = (*TestCache)(nil)
 
 func NewTestCache(name string) *TestCache {
 	return &TestCache{
-		name:  name,
-		cache: make(map[string][]byte),
+		name,
+		make(map[string][]byte),
+		&sync.Mutex{},
 	}
 }
 

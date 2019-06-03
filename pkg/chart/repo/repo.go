@@ -42,14 +42,14 @@ func NewRepo(repoURL string, cache Cache) *Repo {
 }
 
 const (
-	RefreshIndexTimeout = 5000
+	RefreshIndexTimeout = 5000 * time.Millisecond
 )
 
 func (r *Repo) RefreshIndex() error {
 	// This bit acquires a mutex with a timeout.
 	// It uses a buffered 1-element channel as a token sentinel.
 	select {
-	case <-time.After(RefreshIndexTimeout * time.Millisecond):
+	case <-time.After(RefreshIndexTimeout):
 		return fmt.Errorf("timed out to refresh index on repo %s", r.url)
 	case r.syncChan <- (struct{}{}):
 	}
@@ -172,7 +172,8 @@ func (r *Repo) FetchIfNotCached(chart, version string) (*chart.Chart, error) {
 	return r.Fetch(cv)
 }
 
-func fetch(url string) ([]byte, error) {
+// Redefined in tests
+var fetch = func(url string) ([]byte, error) {
 	resp, err := instrumentedclient.Get(url)
 	if err != nil {
 		return nil, err
@@ -186,7 +187,8 @@ func fetch(url string) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
-func loadIndex(data []byte) (*repo.IndexFile, error) {
+// Redefined in tests
+var loadIndex = func(data []byte) (*repo.IndexFile, error) {
 	if len(data) == 0 {
 		return nil, fmt.Errorf("empty content")
 	}
@@ -205,7 +207,8 @@ func loadIndex(data []byte) (*repo.IndexFile, error) {
 	return i, nil
 }
 
-func loadChart(data []byte) (*chart.Chart, error) {
+// Redefined in tests
+var loadChart = func(data []byte) (*chart.Chart, error) {
 	if len(data) == 0 {
 		return nil, fmt.Errorf("empty content")
 	}
